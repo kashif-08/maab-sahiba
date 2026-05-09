@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blooming Apology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Homemade+Apple&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --progress: 0;
+      --rain-opacity: 0.75;
+      --rain-speed: 1.2;
+      --glow-strength: 0.25;
+      --text: #f5f7ff;
+      --card-bg: rgba(10, 16, 28, 0.72);
+      --card-border: rgba(232, 236, 255, 0.28);
+      --ground-dark: #1a2a1d;
+      --ground-light: #466838;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Homemade Apple", cursive;
+      color: var(--text);
+      background: #08111d;
+    }
+
+    body {
+      position: relative;
+      transition: color 0.8s ease;
+    }
+
+    .intro-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      background: rgba(8, 13, 22, 0.68);
+      backdrop-filter: blur(5px);
+    }
+
+    .intro-card {
+      width: min(90vw, 480px);
+      border: 1px solid rgba(198, 210, 190, 0.6);
+      border-radius: 16px;
+      padding: 26px 20px;
+      background: rgba(21, 32, 44, 0.8);
+      text-align: center;
+      box-shadow: 0 20px 36px rgba(4, 9, 15, 0.38);
+    }
+
+    .intro-card p {
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      line-height: 1.45;
+      color: #f5f7ef;
+      margin-bottom: 16px;
+    }
+
+    .intro-ok-btn {
+      border: 1px solid rgba(176, 202, 166, 0.78);
+      background: rgba(66, 102, 72, 0.82);
+      color: #f5f6ef;
+      font-family: "Homemade Apple", cursive;
+      font-size: 0.95rem;
+      padding: 9px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .intro-ok-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(78, 110, 83, 0.9);
+    }
+
+    .scene {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 12% 82%, rgba(116, 186, 91, calc(var(--progress) * 0.18)) 0%, rgba(116, 186, 91, 0) 32%),
+        radial-gradient(circle at 88% 78%, rgba(245, 194, 102, calc(var(--progress) * 0.22)) 0%, rgba(245, 194, 102, 0) 36%),
+        linear-gradient(180deg,
+          hsl(calc(220 - (var(--progress) * 18)), calc(38% + var(--progress) * 20%), calc(10% + var(--progress) * 60%)) 0%,
+          hsl(calc(200 - (var(--progress) * 14)), calc(32% + var(--progress) * 24%), calc(7% + var(--progress) * 52%)) 56%,
+          hsl(calc(108 - (var(--progress) * 16)), calc(28% + var(--progress) * 26%), calc(16% + var(--progress) * 30%)) 100%);
+      transition: background 1s ease;
+    }
+
+    .mist {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 48%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0) 40%),
+        radial-gradient(circle at 82% 36%, rgba(197, 219, 255, 0.09) 0, rgba(197, 219, 255, 0) 45%),
+        radial-gradient(circle at 52% 92%, rgba(213, 243, 210, 0.1) 0, rgba(213, 243, 210, 0) 40%);
+      opacity: calc(0.45 - (var(--progress) * 0.3));
+      transition: opacity 1s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .title-wrap {
+      position: absolute;
+      top: clamp(18px, 4vh, 42px);
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 5;
+      pointer-events: none;
+      width: min(92vw, 760px);
+      text-shadow: 0 6px 18px rgba(8, 14, 23, 0.44);
+    }
+
+    .title-wrap h1 {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: clamp(1.7rem, 3.7vw, 3.05rem);
+      opacity: 0.95;
+    }
+
+    .rain-layer {
+      position: absolute;
+      inset: -10% -3% 0;
+      z-index: 2;
+      opacity: var(--rain-opacity);
+      transition: opacity 1.8s ease;
+      pointer-events: none;
+    }
+
+    .drop {
+      position: absolute;
+      top: -14%;
+      width: 1.5px;
+      border-radius: 50%;
+      background: linear-gradient(to bottom, rgba(220, 237, 255, 0), rgba(216, 236, 255, 0.8));
+      animation-name: rain-fall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      will-change: transform, opacity;
+      opacity: 0.8;
+      transform: skewX(-12deg);
+    }
+
+    @keyframes rain-fall {
+      0% {
+        transform: translate3d(0, -20vh, 0) skewX(-12deg);
+        opacity: 0;
+      }
+
+      12% {
+        opacity: 0.9;
+      }
+
+      86% {
+        opacity: 0.5;
+      }
+
+      100% {
+        transform: translate3d(-12vw, 125vh, 0) skewX(-12deg);
+        opacity: 0;
+      }
+    }
+
+    .garden {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .ground {
+      position: absolute;
+      left: -8%;
+      width: 116%;
+      height: min(36vh, 300px);
+      bottom: -12vh;
+      background:
+        radial-gradient(circle at 22% 35%, rgba(139, 201, 118, calc(var(--progress) * 0.32)) 0%, rgba(139, 201, 118, 0) 38%),
+        radial-gradient(circle at 77% 34%, rgba(248, 202, 133, calc(var(--progress) * 0.26)) 0%, rgba(248, 202, 133, 0) 35%),
+        linear-gradient(180deg, hsl(110, 24%, calc(14% + var(--progress) * 12%)) 0%, hsl(112, 32%, calc(10% + var(--progress) * 16%)) 100%);
+      border-top-left-radius: 42% 44%;
+      border-top-right-radius: 42% 44%;
+      filter: saturate(calc(0.6 + var(--progress) * 0.9));
+      pointer-events: none;
+      transition: background 1s ease, filter 1s ease;
+    }
+
+    .flower {
+      position: absolute;
+      width: clamp(102px, 12vw, 154px);
+      aspect-ratio: 0.9;
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.42s ease, filter 0.7s ease;
+      transform-origin: center bottom;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .flower:hover {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .flower:focus-visible {
+      outline: 2px solid rgba(249, 245, 203, 0.85);
+      outline-offset: 3px;
+      border-radius: 12px;
+    }
+
+    .flower.final {
+      width: clamp(126px, 15vw, 185px);
+      filter: drop-shadow(0 0 12px rgba(251, 209, 125, 0.22));
+    }
+
+    .flower.final.bloomed {
+      filter:
+        drop-shadow(0 0 12px rgba(255, 232, 175, 0.66)) drop-shadow(0 0 38px rgba(255, 203, 112, 0.52));
+    }
+
+    .flower svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .stem {
+      stroke: #4f6f48;
+      stroke-width: 7;
+      stroke-linecap: round;
+      fill: none;
+      transition: stroke 0.8s ease;
+    }
+
+    .leaf {
+      fill: #506f4f;
+      opacity: 0.75;
+      transition: fill 0.8s ease, opacity 0.8s ease;
+    }
+
+    .petal {
+      transform-origin: center;
+      transform-box: fill-box;
+      fill: #7c8188;
+      opacity: 0.75;
+      transition:
+        fill 0.95s ease,
+        opacity 0.95s ease,
+        transform 0.95s cubic-bezier(0.2, 0.8, 0.24, 1);
+    }
+
+    .center {
+      fill: #8a8e96;
+      transition: fill 0.95s ease, transform 0.95s ease;
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+
+    .flower.wilted .stem {
+      stroke: #4a5c53;
+    }
+
+    .flower.wilted .leaf {
+      fill: #53655d;
+      opacity: 0.55;
+    }
+
+    .flower.wilted .petal {
+      fill: #7d8491;
+      opacity: 0.64;
+      transform: scale(0.68) rotate(22deg) translateY(14px);
+    }
+
+    .flower.wilted .center {
+      fill: #7d8491;
+      transform: scale(0.78) translateY(6px);
+    }
+
+    .flower.bloomed {
+      transform: translateY(-3px) scale(1.04);
+    }
+
+    .flower.bloomed .stem {
+      stroke: #4c9d59;
+    }
+
+    .flower.bloomed .leaf {
+      fill: #63b96a;
+      opacity: 0.95;
+    }
+
+    .flower.bloomed .petal {
+      transform: scale(1) rotate(0deg) translateY(0);
+      opacity: 1;
+    }
+
+    .flower.bloomed .center {
+      transform: scale(1) translateY(0);
+    }
+
+    .flower[data-color="rose"].bloomed .petal {
+      fill: #f29ab2;
+    }
+
+    .flower[data-color="peach"].bloomed .petal {
+      fill: #f5bf8b;
+    }
+
+    .flower[data-color="lilac"].bloomed .petal {
+      fill: #c9a2e7;
+    }
+
+    .flower[data-color="blue"].bloomed .petal {
+      fill: #94b8f3;
+    }
+
+    .flower[data-color="gold"].bloomed .petal {
+      fill: #f5d47d;
+    }
+
+    .flower[data-color="blush"].bloomed .petal {
+      fill: #f6a2a0;
+    }
+
+    .flower[data-color="final"].bloomed .petal {
+      fill: #f8cf78;
+    }
+
+    .flower.bloomed .center {
+      fill: #ffe89f;
+    }
+
+    .flower[data-color="blue"].bloomed .center {
+      fill: #f5f4cc;
+    }
+
+    .flower[data-color="lilac"].bloomed .center {
+      fill: #f7dea2;
+    }
+
+    .flower[data-color="final"].bloomed .center {
+      fill: #fff2bf;
+    }
+
+    .message-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      pointer-events: none;
+    }
+
+    .message-card {
+      position: absolute;
+      min-width: 180px;
+      max-width: min(78vw, 430px);
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      box-shadow: 0 18px 30px rgba(9, 15, 24, 0.35);
+      font-size: clamp(0.88rem, 1.3vw, 1rem);
+      line-height: 1.45;
+      text-wrap: pretty;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+      animation: card-in 800ms ease forwards;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.98);
+    }
+
+    .message-card.final {
+      font-size: clamp(0.92rem, 1.36vw, 1.08rem);
+      border-color: rgba(255, 236, 178, 0.68);
+      background: rgba(44, 34, 17, 0.62);
+      box-shadow:
+        0 15px 34px rgba(16, 10, 1, 0.38),
+        0 0 20px rgba(254, 214, 123, 0.26);
+    }
+
+    @keyframes card-in {
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .final-choice {
+      position: absolute;
+      left: 50%;
+      top: calc(50% + 86px);
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      z-index: 8;
+      pointer-events: auto;
+      width: min(86vw, 520px);
+    }
+
+    .choice-btn {
+      border: 1px solid rgba(196, 212, 190, 0.7);
+      background: rgba(56, 79, 59, 0.78);
+      color: #f5f6ef;
+      font-family: "Homemade Apple", cursive;
+      font-size: 0.92rem;
+      padding: 8px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .choice-btn[data-choice="sure"] {
+      border-color: rgba(176, 202, 166, 0.78);
+      background: rgba(66, 102, 72, 0.82);
+    }
+
+    .choice-btn[data-choice="nah"] {
+      border-color: rgba(196, 158, 158, 0.76);
+      background: rgba(107, 70, 70, 0.8);
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(78, 110, 83, 0.9);
+    }
+
+    .choice-btn[data-choice="nah"]:hover {
+      background: rgba(125, 82, 82, 0.9);
+    }
+
+    .choice-btn:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+
+    .floating-sure {
+      position: absolute;
+      z-index: 8;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+    }
+
+    .floating-sure:hover {
+      transform: translate(-50%, -50%) translateY(-1px);
+    }
+
+    .status {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: clamp(16px, 4vh, 34px);
+      z-index: 8;
+      font-size: clamp(0.86rem, 1.3vw, 1rem);
+      opacity: 0.88;
+      letter-spacing: 0.01em;
+      text-align: center;
+      text-shadow: 0 4px 12px rgba(8, 13, 20, 0.45);
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+      padding-inline: 16px;
+      width: min(92vw, 700px);
+    }
+
+    .petal-rain {
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .petal-piece {
+      position: absolute;
+      top: -10vh;
+      width: 12px;
+      height: 18px;
+      border-radius: 60% 40% 60% 40%;
+      opacity: 0.9;
+      animation: petal-fall linear infinite;
+      filter: drop-shadow(0 2px 2px rgba(13, 12, 15, 0.15));
+    }
+
+    @keyframes petal-fall {
+      0% {
+        transform: translate3d(0, -10vh, 0) rotate(0deg);
+        opacity: 0;
+      }
+
+      7% {
+        opacity: 0.92;
+      }
+
+      100% {
+        transform: translate3d(var(--drift, -10vw), 115vh, 0) rotate(var(--spin, 540deg));
+        opacity: 0;
+      }
+    }
+
+    .sun-glow {
+      position: absolute;
+      top: -20%;
+      right: -14%;
+      width: min(58vw, 460px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255, 247, 182, calc(var(--progress) * 0.36 + var(--glow-strength) * 0.16)) 0%, rgba(255, 240, 168, 0.26) 28%, rgba(255, 235, 150, 0) 72%);
+      filter: blur(2px);
+      z-index: 1;
+      pointer-events: none;
+      transition: background 1.2s ease;
+    }
+
+    @media (max-width: 780px) {
+      .message-card {
+        max-width: min(84vw, 390px);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .flower {
+        width: clamp(82px, 21vw, 108px);
+      }
+
+      .flower.final {
+        width: clamp(100px, 25vw, 132px);
+      }
+
+      .title-wrap {
+        top: 18px;
+      }
+
+      .title-wrap h1 {
+        font-size: clamp(1.35rem, 6.2vw, 2rem);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="intro-overlay" id="introOverlay">
+    <div class="intro-card">
+      <p>sound on, maab.</p>
+      <button class="intro-ok-btn" id="introOkBtn" type="button">okay</button>
+    </div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="sun-glow"></div>
+    <div class="mist"></div>
+    <header class="title-wrap">
+      <h1>Dearest Maab.</h1>
+    </header>
+
+    <div class="rain-layer" id="rainLayer" aria-hidden="true"></div>
+
+    <main class="garden" id="garden" aria-label="Interactive apology garden"></main>
+    <div class="ground"></div>
+    <div class="message-layer" id="messageLayer" aria-live="polite"></div>
+    <div class="petal-rain" id="petalRain" aria-hidden="true"></div>
+  </div>
+
+  <script>
+    const flowerData = [
+      {
+        id: "f1",
+        color: "rose",
+        x: 11,
+        y: 76,
+        mobileX: 10,
+        mobileY: 75,
+        delay: 0
+      },
+      {
+        id: "f2",
+        color: "peach",
+        x: 24,
+        y: 72,
+        mobileX: 25,
+        mobileY: 72,
+        delay: 70
+      },
+      {
+        id: "f3",
+        color: "lilac",
+        x: 35,
+        y: 80,
+        mobileX: 36,
+        mobileY: 79,
+        delay: 130
+      },
+      {
+        id: "f4",
+        color: "blue",
+        x: 51,
+        y: 70,
+        mobileX: 50,
+        mobileY: 71,
+        delay: 50
+      },
+      {
+        id: "f5",
+        color: "gold",
+        x: 65,
+        y: 79,
+        mobileX: 64,
+        mobileY: 79,
+        delay: 110
+      },
+      {
+        id: "f6",
+        color: "blush",
+        x: 76,
+        y: 72,
+        mobileX: 79,
+        mobileY: 72,
+        delay: 20
+      },
+      {
+        id: "f7",
+        color: "final",
+        final: true,
+        x: 86,
+        y: 84,
+        mobileX: 50,
+        mobileY: 85,
+        delay: 160
+      }
+    ];
+
+    const messageSequence = [
+      "Nothing makes me happier than talking to you",
+      "No sound do I like more than the sound of your voice",
+      "Despite our fights and disagreements, I adore you more and more with every passing day",
+      "And I despise every minute, every moment without you",
+      "You have a pure heart, far purer than mine, I have no right to hurt it.",
+      "I am sorry, I love you.",
+      "Please forgive me?"
+    ];
+
+    const scene = document.getElementById("scene");
+    const rainLayer = document.getElementById("rainLayer");
+    const garden = document.getElementById("garden");
+    const messageLayer = document.getElementById("messageLayer");
+    const petalRain = document.getElementById("petalRain");
+    const introOverlay = document.getElementById("introOverlay");
+    const introOkBtn = document.getElementById("introOkBtn");
+    const RAIN_AUDIO_SRC = "./rainsound.mp3";
+    const SMITHS_AUDIO_SRC = "./the-smiths.mp3";
+    const rainAudio = new Audio(encodeURI(RAIN_AUDIO_SRC));
+    const finalSongAudio = new Audio(encodeURI(SMITHS_AUDIO_SRC));
+
+    let bloomedCount = 0;
+    const totalFlowers = flowerData.length;
+    const flowerEls = new Map();
+    const flowerMessages = new Map();
+    let nextMessageIndex = 0;
+    let petalsStarted = false;
+    let rainAudioStarted = false;
+
+    rainAudio.loop = true;
+    rainAudio.preload = "auto";
+    rainAudio.volume = 0.34;
+
+    finalSongAudio.preload = "auto";
+    finalSongAudio.volume = 0.75;
+
+    function createRain() {
+      const dropCount = 92;
+      const frag = document.createDocumentFragment();
+
+      for (let i = 0; i < dropCount; i += 1) {
+        const drop = document.createElement("span");
+        drop.className = "drop";
+        const x = Math.random() * 100;
+        const duration = (0.76 + Math.random() * 0.8).toFixed(2);
+        const delay = (-Math.random() * 2.8).toFixed(2);
+        const height = (10 + Math.random() * 24).toFixed(1);
+        const opacity = (0.35 + Math.random() * 0.55).toFixed(2);
+
+        drop.style.left = `${x}%`;
+        drop.style.height = `${height}px`;
+        drop.style.animationDuration = `${duration}s`;
+        drop.style.animationDelay = `${delay}s`;
+        drop.style.opacity = opacity;
+
+        frag.appendChild(drop);
+      }
+
+      rainLayer.appendChild(frag);
+    }
+
+    function flowerSVG() {
+      return `
+        <svg viewBox="0 0 160 205" role="presentation" aria-hidden="true">
+          <path class="stem" d="M80 191 C 80 157 88 132 78 102 C 71 80 74 58 80 38"></path>
+          <path class="leaf" d="M82 146 C96 138 108 142 114 158 C102 163 90 162 82 146 Z"></path>
+          <path class="leaf" d="M76 129 C62 120 50 123 46 139 C59 143 70 142 76 129 Z"></path>
+          <ellipse class="petal" cx="80" cy="62" rx="16" ry="34"></ellipse>
+          <ellipse class="petal" cx="105" cy="75" rx="15" ry="30" transform="rotate(40 105 75)"></ellipse>
+          <ellipse class="petal" cx="112" cy="103" rx="15" ry="30" transform="rotate(82 112 103)"></ellipse>
+          <ellipse class="petal" cx="95" cy="126" rx="15" ry="30" transform="rotate(128 95 126)"></ellipse>
+          <ellipse class="petal" cx="65" cy="126" rx="15" ry="30" transform="rotate(228 65 126)"></ellipse>
+          <ellipse class="petal" cx="48" cy="103" rx="15" ry="30" transform="rotate(275 48 103)"></ellipse>
+          <ellipse class="petal" cx="55" cy="76" rx="15" ry="30" transform="rotate(318 55 76)"></ellipse>
+          <circle class="center" cx="80" cy="98" r="16"></circle>
+        </svg>
+      `;
+    }
+
+    function createFlowers() {
+      const frag = document.createDocumentFragment();
+
+      flowerData.forEach((flower, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `flower wilted${flower.final ? " final" : ""}`;
+        btn.dataset.id = flower.id;
+        btn.dataset.color = flower.color;
+        btn.dataset.index = String(idx);
+        btn.dataset.bloomed = "false";
+        btn.dataset.rotation = (Math.random() * 4 - 2).toFixed(2);
+        applyFlowerPlacement(btn, flower);
+        btn.style.animationDelay = `${flower.delay}ms`;
+
+        if (flower.final) {
+          btn.setAttribute("aria-label", "Final apology flower");
+        } else {
+          btn.setAttribute("aria-label", `Flower ${idx + 1}`);
+        }
+
+        btn.innerHTML = flowerSVG();
+        btn.addEventListener("click", onFlowerClick);
+
+        flowerEls.set(flower.id, btn);
+        frag.appendChild(btn);
+      });
+
+      garden.appendChild(frag);
+    }
+
+    function getFlowerPosition(flower) {
+      const isMobile = window.matchMedia("(max-width: 560px)").matches;
+      if (isMobile) {
+        return {
+          x: flower.mobileX ?? flower.x,
+          y: flower.mobileY ?? flower.y
+        };
+      }
+      return { x: flower.x, y: flower.y };
+    }
+
+    function applyFlowerPlacement(button, flower) {
+      const pos = getFlowerPosition(flower);
+      const rotation = button.dataset.rotation || "0";
+      button.style.left = `${pos.x}%`;
+      button.style.top = `${pos.y}%`;
+      button.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+    }
+
+    function updateEnvironment() {
+      const progress = bloomedCount / totalFlowers;
+      scene.style.setProperty("--progress", progress.toFixed(3));
+      setRainVolumeFromProgress(progress);
+
+      if (bloomedCount >= 5) {
+        scene.style.setProperty("--rain-opacity", "0.12");
+        const drops = rainLayer.querySelectorAll(".drop");
+        drops.forEach((drop) => {
+          drop.style.animationDuration = `${(1.75 + Math.random() * 1.2).toFixed(2)}s`;
+        });
+      }
+
+      if (bloomedCount >= 6) {
+        scene.style.setProperty("--rain-opacity", "0.03");
+      }
+
+      if (bloomedCount === totalFlowers) {
+        scene.style.setProperty("--glow-strength", "0.95");
+        scene.style.setProperty("--rain-opacity", "0");
+      }
+    }
+
+    function startRainAudioIfNeeded() {
+      if (rainAudioStarted || petalsStarted) {
+        return;
+      }
+
+      rainAudio.play()
+        .then(() => {
+          rainAudioStarted = true;
+        })
+        .catch(() => {
+          rainAudioStarted = false;
+        });
+    }
+
+    function setRainVolumeFromProgress(progress) {
+      const nextVolume = Math.max(0, 0.34 * (1 - progress * 1.08));
+      rainAudio.volume = Math.min(0.34, nextVolume);
+    }
+
+    function fadeOutRainAndStop(durationMs = 850) {
+      if (rainAudio.paused) {
+        return;
+      }
+
+      const steps = 18;
+      const stepDuration = durationMs / steps;
+      const startVolume = rainAudio.volume;
+      let step = 0;
+
+      const timer = window.setInterval(() => {
+        step += 1;
+        const ratio = Math.min(1, step / steps);
+        rainAudio.volume = Math.max(0, startVolume * (1 - ratio));
+
+        if (ratio >= 1) {
+          window.clearInterval(timer);
+          rainAudio.pause();
+          rainAudio.currentTime = 0;
+          rainAudioStarted = false;
+        }
+      }, stepDuration);
+    }
+
+    function playFinalSong() {
+      finalSongAudio.currentTime = 0;
+      finalSongAudio.play().catch(() => { });
+    }
+
+    function showMessageCard(flower, message, isFinal = false) {
+      const existing = document.getElementById("active-message-card");
+      if (existing) {
+        existing.remove();
+      }
+
+      const card = document.createElement("article");
+      card.className = `message-card${isFinal ? " final" : ""}`;
+      card.id = "active-message-card";
+      card.textContent = message;
+
+      messageLayer.appendChild(card);
+    }
+
+    function showFinalChoice() {
+      const existing = document.getElementById("final-choice");
+      if (existing) {
+        return;
+      }
+
+      const choice = document.createElement("div");
+      choice.id = "final-choice";
+      choice.className = "final-choice";
+      choice.innerHTML = `
+        <button class="choice-btn" type="button" data-choice="sure">sure</button>
+        <button class="choice-btn" type="button" data-choice="nah">nah</button>
+      `;
+
+      function acceptApology() {
+        if (petalsStarted) {
+          return;
+        }
+        petalsStarted = true;
+        const activeMessage = document.getElementById("active-message-card");
+        if (activeMessage) {
+          activeMessage.remove();
+        }
+        choice.remove();
+        scene.querySelectorAll(".floating-sure").forEach((btn) => btn.remove());
+        startPetalRain();
+        fadeOutRainAndStop();
+        playFinalSong();
+      }
+
+      choice.addEventListener("click", (event) => {
+        const btn = event.target.closest(".choice-btn");
+        if (!btn) {
+          return;
+        }
+
+        if (btn.dataset.choice === "sure") {
+          acceptApology();
+          return;
+        }
+
+        if (btn.dataset.choice === "nah" && !petalsStarted) {
+          const extraSure = document.createElement("button");
+          extraSure.className = "choice-btn floating-sure";
+          extraSure.type = "button";
+          extraSure.dataset.choice = "sure";
+          extraSure.textContent = "sure";
+          extraSure.style.left = `${(8 + Math.random() * 84).toFixed(2)}%`;
+          extraSure.style.top = `${(14 + Math.random() * 74).toFixed(2)}%`;
+          extraSure.addEventListener("click", acceptApology);
+          scene.appendChild(extraSure);
+        }
+      });
+
+      messageLayer.appendChild(choice);
+    }
+
+    function flowerElById(id) {
+      return flowerEls.get(id);
+    }
+
+    function messageForFlower(flower) {
+      if (flowerMessages.has(flower.id)) {
+        return flowerMessages.get(flower.id);
+      }
+
+      const safeIndex = Math.min(nextMessageIndex, messageSequence.length - 1);
+      const message = messageSequence[safeIndex];
+      flowerMessages.set(flower.id, message);
+      nextMessageIndex += 1;
+      return message;
+    }
+
+    function bloomFlower(flower, flowerEl) {
+      flowerEl.classList.remove("wilted");
+      flowerEl.classList.add("bloomed");
+      flowerEl.dataset.bloomed = "true";
+      bloomedCount += 1;
+
+      showMessageCard(flower, messageForFlower(flower), Boolean(flower.final));
+      updateEnvironment();
+
+      if (bloomedCount === totalFlowers) {
+        showMessageCard(
+          flower,
+          messageSequence[messageSequence.length - 1],
+          true
+        );
+        showFinalChoice();
+      }
+    }
+
+    function onFlowerClick(event) {
+      startRainAudioIfNeeded();
+
+      const btn = event.currentTarget;
+      const id = btn.dataset.id;
+      const flower = flowerData.find((f) => f.id === id);
+      if (!flower) {
+        return;
+      }
+
+      if (btn.dataset.bloomed === "true") {
+        return;
+      }
+
+      bloomFlower(flower, btn);
+    }
+
+    function startPetalRain() {
+      const colors = ["#f7c8d2", "#f3e39b", "#f9d59d", "#f0b7b4", "#f7dbad"];
+      const total = 90;
+      const frag = document.createDocumentFragment();
+
+      for (let i = 0; i < total; i += 1) {
+        const petal = document.createElement("span");
+        petal.className = "petal-piece";
+        petal.style.left = `${Math.random() * 100}%`;
+        petal.style.background = colors[i % colors.length];
+        petal.style.animationDuration = `${(5.5 + Math.random() * 5).toFixed(2)}s`;
+        petal.style.animationDelay = `${(Math.random() * 2.8).toFixed(2)}s`;
+        petal.style.setProperty("--drift", `${(-20 + Math.random() * 40).toFixed(1)}vw`);
+        petal.style.setProperty("--spin", `${(220 + Math.random() * 690).toFixed(0)}deg`);
+
+        frag.appendChild(petal);
+      }
+
+      petalRain.innerHTML = "";
+      petalRain.appendChild(frag);
+    }
+
+    function init() {
+      createRain();
+      createFlowers();
+      updateEnvironment();
+
+      introOkBtn.addEventListener("click", () => {
+        introOverlay.remove();
+        startRainAudioIfNeeded();
+      });
+
+      window.addEventListener("resize", () => {
+        flowerData.forEach((flower) => {
+          const btn = flowerElById(flower.id);
+          if (!btn) {
+            return;
+          }
+          applyFlowerPlacement(btn, flower);
+        });
+      });
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
