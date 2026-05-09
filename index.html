@@ -677,6 +677,9 @@
     let nextMessageIndex = 0;
     let petalsStarted = false;
     let rainAudioStarted = false;
+    let rainAudioContext = null;
+    let rainSourceNode = null;
+    let rainGainNode = null;
 
     rainAudio.loop = true;
     rainAudio.preload = "auto";
@@ -684,6 +687,32 @@
 
     finalSongAudio.preload = "auto";
     finalSongAudio.volume = 0.75;
+
+    function ensureRainAudioGraph() {
+      if (rainGainNode) {
+        return;
+      }
+
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) {
+        return;
+      }
+
+      rainAudioContext = rainAudioContext || new AudioCtx();
+      rainSourceNode = rainSourceNode || rainAudioContext.createMediaElementSource(rainAudio);
+      rainGainNode = rainGainNode || rainAudioContext.createGain();
+      rainSourceNode.connect(rainGainNode);
+      rainGainNode.connect(rainAudioContext.destination);
+      rainGainNode.gain.value = rainAudio.volume;
+    }
+
+    function setRainLevel(level) {
+      const clamped = Math.max(0, Math.min(0.34, level));
+      rainAudio.volume = clamped;
+      if (rainGainNode) {
+        rainGainNode.gain.value = clamped;
+      }
+    }
 
     function createRain() {
       const dropCount = 92;
@@ -806,6 +835,11 @@
         return;
       }
 
+      ensureRainAudioGraph();
+      if (rainAudioContext && rainAudioContext.state === "suspended") {
+        rainAudioContext.resume().catch(() => { });
+      }
+
       rainAudio.play()
         .then(() => {
           rainAudioStarted = true;
@@ -817,7 +851,7 @@
 
     function setRainVolumeFromProgress(progress) {
       const nextVolume = Math.max(0, 0.34 * (1 - progress * 1.08));
-      rainAudio.volume = Math.min(0.34, nextVolume);
+      setRainLevel(nextVolume);
     }
 
     function fadeOutRainAndStop(durationMs = 850) {
@@ -827,13 +861,13 @@
 
       const steps = 18;
       const stepDuration = durationMs / steps;
-      const startVolume = rainAudio.volume;
+      const startVolume = rainGainNode ? rainGainNode.gain.value : rainAudio.volume;
       let step = 0;
 
       const timer = window.setInterval(() => {
         step += 1;
         const ratio = Math.min(1, step / steps);
-        rainAudio.volume = Math.max(0, startVolume * (1 - ratio));
+        setRainLevel(startVolume * (1 - ratio));
 
         if (ratio >= 1) {
           window.clearInterval(timer);
