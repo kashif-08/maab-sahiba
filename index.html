@@ -229,16 +229,42 @@
 
     .flower.final {
       width: clamp(126px, 15vw, 185px);
+      overflow: visible;
+    }
+
+    .flower.final::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 62%;
+      width: 78%;
+      height: 58%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(251, 209, 125, 0.24) 0%,
+        rgba(251, 209, 125, 0.1) 48%,
+        rgba(251, 209, 125, 0) 75%
+      );
+      opacity: 0.62;
+      transition: opacity 0.7s ease, transform 0.7s ease, background 0.7s ease;
+      pointer-events: none;
     }
 
     .flower.final svg {
-      filter: drop-shadow(0 0 12px rgba(251, 209, 125, 0.22));
-      transition: filter 0.7s ease;
+      transition: transform 0.7s ease;
     }
 
-    .flower.final.bloomed svg {
-      filter:
-        drop-shadow(0 0 12px rgba(255, 232, 175, 0.66)) drop-shadow(0 0 38px rgba(255, 203, 112, 0.52));
+    .flower.final.bloomed::before {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+      background: radial-gradient(
+        circle,
+        rgba(255, 232, 175, 0.62) 0%,
+        rgba(255, 203, 112, 0.3) 48%,
+        rgba(255, 203, 112, 0) 76%
+      );
     }
 
     .flower svg {
