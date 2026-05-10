@@ -556,7 +556,7 @@
     <div class="sun-glow"></div>
     <div class="mist"></div>
     <header class="title-wrap">
-      <h1>Dearest Maab.</h1>
+      <h1 id="titleText">Dearest Maab.</h1>
     </header>
 
     <div class="rain-layer" id="rainLayer" aria-hidden="true"></div>
@@ -650,6 +650,7 @@
     const garden = document.getElementById("garden");
     const messageLayer = document.getElementById("messageLayer");
     const petalRain = document.getElementById("petalRain");
+    const titleText = document.getElementById("titleText");
     const introOverlay = document.getElementById("introOverlay");
     const introOkBtn = document.getElementById("introOkBtn");
     const RAIN_AUDIO_SRC = "./rainsound.mp3";
@@ -861,6 +862,9 @@
     }
 
     function playFinalSong() {
+      if (titleText) {
+        titleText.textContent = "Because you the Smiths";
+      }
       finalSongAudio.currentTime = 0;
       finalSongAudio.play().catch(() => { });
     }
